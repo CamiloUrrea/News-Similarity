@@ -1,13 +1,21 @@
 """Pair ranking and Markdown report generation."""
 
+import os
+
 import numpy as np
 import pandas as pd
+
+# Written analysis inserted into the report, kept outside results/
+INTERPRETATION_PATH = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "interpretation.md"
+)
 
 LIMITATIONS = [
     "Similarity is lexical (shared words), not semantic: synonyms and paraphrases are not detected.",
     "Preprocessing removes accented letters and the stop word \"won\".",
     "The dataset contains only a few articles.",
     "Results depend on the length of each text.",
+    "Custom domain stop words were added for newswire boilerplate.",
 ]
 
 
@@ -163,8 +171,13 @@ def generate_report(jaccard_matrix, cosine_matrix, tokens_by_article, output_pat
     lines += [f"- {item}" for item in LIMITATIONS]
     lines.append("")
 
-    # f) Interpretation placeholder
-    lines += ["## Interpretation", "", "TODO: write after reviewing results", ""]
+    # f) Interpretation, read from interpretation.md if it exists
+    if os.path.isfile(INTERPRETATION_PATH):
+        with open(INTERPRETATION_PATH, encoding="utf-8") as f:
+            interpretation = f.read().rstrip("\n")
+    else:
+        interpretation = "TODO: write after reviewing results"
+    lines += ["## Interpretation", "", interpretation, ""]
 
     with open(output_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))

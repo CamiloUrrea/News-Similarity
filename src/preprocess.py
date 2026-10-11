@@ -1,23 +1,31 @@
 """Text preprocessing for news articles."""
 
+import html
 import re
 from functools import lru_cache
 
 import nltk
 from nltk.corpus import stopwords
 
+# Newswire boilerplate words, added to NLTK's English stop words
+DOMAIN_STOPWORDS = {
+    "said", "says", "also", "would", "could", "year", "years", "reuters",
+    "mln", "pct", "dlrs", "billion", "today", "told", "new",
+}
+
 
 @lru_cache(maxsize=1)
 def _english_stopwords():
-    """Return the English stop words as a set (loaded once)."""
-    return set(stopwords.words("english"))
+    """Return NLTK's English stop words plus the domain ones (loaded once)."""
+    return set(stopwords.words("english")) | DOMAIN_STOPWORDS
 
 
 def preprocess_text(text):
     """Clean a text and split it into tokens.
 
-    Steps: lowercase, remove URLs, keep only letters and spaces,
-    tokenize, remove English stop words and drop tokens shorter
+    Steps: unescape HTML entities, remove text between angle brackets,
+    lowercase, remove URLs, keep only letters and spaces, tokenize,
+    remove English and domain stop words and drop tokens shorter
     than 3 characters.
 
     Args:
@@ -26,6 +34,11 @@ def preprocess_text(text):
     Returns:
         A list of clean tokens.
     """
+    text = html.unescape(text)
+
+    # Remove text between angle brackets (e.g. tickers like <BUD.N>)
+    text = re.sub(r"<[^>]*>", " ", text)
+
     text = text.lower()
 
     # Remove URLs
